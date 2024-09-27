@@ -9293,7 +9293,7 @@ function makeProgram21( n, isCopy ) {
 		days, i, j, program, page, times, time, unchecked;
 
 	if ( n === "new" ) {
-		program = { "name":"", "en":0, "weather":0, "is_interval":0, "is_even":0, "is_odd":0, "interval":0, "start":0, "days":[ 0, 0 ], "repeat":0, "stations":[] };
+		program = { "name":"", "en":0, "weather":0, "is_interval":0, "is_even":0, "is_odd":0, "interval":0, "start":0, "days":[ 0, 0 ], "repeat":0, "stations":[],"flow_target":0 };
 	} else {
 		program = readProgram( controller.programs.pd[ n ] );
 	}
@@ -9477,6 +9477,45 @@ function makeProgram21( n, isCopy ) {
 	// Close start time type group
 	list += "</div></div>";
 
+	// Group Flow targets options visually
+	list += "<div style='margin-top:10px' class='ui-corner-all'>";
+	list += "<div class='ui-bar ui-bar-a'><h3>" + _( "Flow Targets (Stop when reached target or time)" ) + "</h3></div>";
+	list += "<div class='ui-body ui-body-a'>";
+
+	// Controlgroup to handle flow (fixed or changing)
+	list += "<fieldset data-role='controlgroup' data-type='horizontal' class='center'>";
+	list += "<input data-mini='true' type='radio' name='stype2-" + id + "' id='stype2_repeat-" + id + "' value='stype2_repeat-" + id + "' " +
+			( ( typeof program.start === "object" ) ? "" : "checked='checked'" ) + ">" +
+		"<label for='stype2_repeat-" + id + "'>" + _( "Fixed" ) + "</label>";
+	list += "<input data-mini='true' type='radio' name='stype2-" + id + "' id='stype2_set-" + id + "' value='stype2_set-" + id + "' " +
+			( ( typeof program.start === "object" ) ? "checked='checked'" : "" ) + ">" +
+		"<label for='stype2_set-" + id + "'>" + _( "Changing2" ) + "</label>";
+	list += "</fieldset>";
+
+	// Show fixed flow targets - updated in program.flow_target
+	list += "<div " + ( ( typeof program.start === "object" ) ? "style='display:none'" : "" ) + " id='input_stype2_repeat-" + id + "'>";
+	list += "<div class='ui-grid-a'>";
+	// list += "<div class='ui-block-a'><label class='pad_buttons center' for='interval2-" + id + "'>" + _( "Repeat2 Every2" ) + "</label>" +
+	//	"<button class='pad_buttons' data-mini2='true' name='interval2-" + id + "' id='interva2-" + id + "' " +
+	//		"value='" + program.interval * 60 + "'>" + dhms2str( sec2dhms( program.interval * 60 ) ) + "</button></div>";
+	list += "<div class='ui-block-b'><label class='pad_buttons center' for='repeat2-" + id + "'>" + _( "Flow Target Count" ) + "</label>" +
+		"<button class='pad_buttons' data-mini2='true' name='repeat2-" + id + "' id='repeat2-" + id + "' value='" + program.flow_target + "'>" +
+			program.flow_target + "</button></div>";
+	list += "</div></div>";
+
+	// Show set times options - change to interger - update in
+	list += "<table style='width:100%;" + ( ( typeof program.start === "object" ) ? "" : "display:none" ) + "' id='input_stype2_set-" + id + "'><tr><th class='center'>" + _( "Enable" ) + "</th><th>" + _( "Flow, now, change" ) + "</th></tr>";
+	for ( j = 1; j < 4; j++ ) {
+		unchecked = ( times[ j ] === -1 );
+		list += "<tr><td data-role='controlgroup' data-type='horizontal' class='use_master center'><label for='ust_" + ( j + 1 ) + "'><input id='ust_" + ( j + 1 ) + "' type='checkbox' " + ( unchecked ? "" : "checked='checked'" ) + "></label></td>";
+		list += "<td><button class='timefield' data-mini2='true' type='time' id='start_" + ( j + 1 ) + "-" + id + "' value='" + ( unchecked ? 0 : times[ j ] ) + "'>" + readStartTime( unchecked ? 0 : times[ j ] ) + "</button></td></tr>";
+	}
+
+	list += "</table>";
+
+	// Close flow target  group
+	list += "</div></div>";
+
 	// Show save, run and delete buttons
 	if ( isCopy === true || n === "new" ) {
 		list += "<button data-mini='true' data-icon='check' data-theme='b' id='submit-" + id + "'>" + _( "Save New Program" ) + "</button>";
@@ -9545,6 +9584,22 @@ function makeProgram21( n, isCopy ) {
 			data: dur.val(),
 			title: name,
 			label: _( "Repeat Count" ),
+			callback: function( result ) {
+				dur.val( result ).text( result );
+			},
+			maximum: 1440
+		} );
+	} );
+
+	// Handle repeat2 count button
+	page.find( "[id^='repeat2-']" ).on( "click", function() {
+		var dur = $( this ),
+			name = page.find( "label[for='" + dur.attr( "id" ) + "']" ).text();
+
+		showSingleDurationInput( {
+			data: dur.val(),
+			title: name,
+			label: _( "Flow Target Count" ),
 			callback: function( result ) {
 				dur.val( result ).text( result );
 			},
